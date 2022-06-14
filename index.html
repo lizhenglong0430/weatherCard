@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+    <!-- 
+        1.了解svg
+        2.了解gsap中的TweenMax
+        3.了解snap.svg
+        4.了解jquery
+        使用工具
+     -->
+    <!-- 菜鸟工具做svg图片链接：https://c.runoob.com/more/svgeditor/#delete -->
+    <!-- 引入jquery -->
+    <!-- https://jquery.cuishifeng.cn/ -->
+    <script src='https://code.jquery.com/jquery-2.2.4.min.js'></script>
+    <!-- 引入gsap -->
+    <!-- gsap官方文档  https://greensock.com/docs/v2/TweenMax-->
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/gsap/1.19.0/TweenMax.min.js'></script>
+    <!-- 引入snap.svg -->
+    <!-- snap.svg官方文档 http://snapsvg.io/docs/ -->
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/snap.svg/0.4.1/snap.svg-min.js'></script>
+    <style>
+        /* 导入文字样式 */
+        @import 'https://fonts.googleapis.com/css?family=Lato:300';
+        /* 导入图片样式 */
+        @import 'https://cdnjs.cloudflare.com/ajax/libs/weather-icons/2.0.9/css/weather-icons.min.css';
+
+        html,
+        body,
+        .background {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            font-family: "Lato", sans-serif;
+        }
+        body {
+            background: #eee;
+            /* 背景渐变 */
+            background: linear-gradient(0deg, rgba(0, 0, 200, 0.2), rgba(0, 0, 200, 0));
+        }
+
+        .container {
+            /* 弹性盒子 */
+            display: flex;
+            /* 竖列顺序 */
+            flex-direction: column;
+            /* 横向居中 */
+            align-items: center;
+            /* 纵向居中 */
+            justify-content: center;
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            width: 100%;
+            overflow: auto;
+            position: relative;
+            /* 背景渐变 */
+            background: linear-gradient(240deg, rgba(150, 50, 50, 0.3), rgba(0, 0, 200, 0));
+        }
+        /* 五个天气选择项 */
+        nav ul {
+            margin: 20px 20px 0 20px;
+            /* 去掉li前面的小黑点 */
+            list-style-type: none;
+            padding: 0;
+            /* 弹性盒子 */
+            display: flex;
+            /* 横向排列 */
+            flex-direction: row;
+        }
+        /* 图标的大小 */
+        nav li a {
+            display: block;
+            width: 50px;
+            text-align: center;
+            color: #aaa;
+            cursor: pointer;
+        }
+        /* 鼠标触碰的时候 */
+        nav li a:hover {
+            color: #444;
+        }
+        /* 鼠标点击的时候 */
+        nav li a.active {
+            color: #4444ff;
+        }
+        /* 卡片 */
+        #card {
+            /* 阴影 */
+            box-shadow: 9px 7px 40px -6px rgba(0, 0, 0, 0.25);
+            overflow: hidden;
+            width: 300px;
+            padding: 0;
+            height: 400px;
+            min-height: 300px;
+            margin: 20px;
+            border-radius: 5px;
+            position: relative;
+        }
+        /* 卡片中的数字和文字介绍 */
+        #card .details {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 16px 20px;
+            color: #888;
+            /* 弹性盒子 */
+            display: flex;
+            /* 行列排序，当然也可以不写，默认的 */
+            flex-direction: row;
+            /* 往两边靠拢，左右对称 */
+            justify-content: space-between;
+            /* 切换文字的时候，color的变化动画 */
+            transition: color 2s ease;
+        }
+        /* 打雷背景图是黑色的，所以文字要搞成白色的才能看的清 */
+        .thunder #card .details {
+            color: #ddd;
+        }
+        /* 摄氏度靠左 */
+        #card .details .temp {
+            font-size: 60px;
+            line-height: 60px;
+        }
+
+        #card .details .temp span {
+            font-size: 18px;
+            line-height: 30px;
+            /* vertical-align 用来指定行内元素（inline）或表格单元格（table-cell）元素的垂直对齐方式 */
+            vertical-align: top;
+            margin-left: 5px;
+        }
+        /* 文字要考右 */
+        #card .details .right {
+            text-align: right;
+        }
+        /* 日期 */
+        #card .details #date {
+            margin: 4px 0;
+        }
+        /* 文字 */
+        #card .details #summary {
+            font-weight: 600;
+            font-size: 22px;
+        }
+        /* 卡片颜色 */
+        .weather {
+            background-color: #DAE3FD;
+            transition: background-color 2s ease;
+        }
+        /* 打雷的卡片颜色 */
+        .thunder .weather {
+            background-color: #9FA4AD;
+        }
+        /* 下雨的卡片颜色 */
+        .rain .weather {
+            background-color: #D8D8D8;
+        }
+        /* 晴天的卡片颜色 */
+        .sun .weather {
+            background-color: #ccccff;
+        }
+        /* svg图片 */
+        .weather #inner {
+            background-color: white;
+            background: linear-gradient(to bottom, rgba(255, 255, 255, 0.5) 50%, rgba(255, 255, 255, 0) 100%);
+        }
+        /* 云 */
+        .weather .cloud {
+            transition: fill 2s ease;
+        }
+        /* 云朵一 */
+        .weather #cloud1 {
+            fill: #efefef;
+        }
+        /* 雷正雨下的云朵一 */
+        .thunder .weather #cloud1 {
+            fill: #9FA4AD;
+        }
+        /* 云朵二 */
+        .weather #cloud2 {
+            fill: #E6E6E6;
+        }
+        /* 雷正雨下的云朵二 */
+        .thunder .weather #cloud2 {
+            fill: #8B8E98;
+        }
+        /* 云朵三 */
+        .weather #cloud3 {
+            fill: #D5D5D5;
+        }
+        /* 雷正雨下的云朵三 */
+        .thunder .weather #cloud3 {
+            fill: #7B7988;
+        }
+        /* 固定飘出来的雪，树叶等svg和背后的太阳光 */
+        #outer,
+        #back {
+            /* 固定位置 */
+            position: fixed;
+            /* 鼠标事件处理 */
+            pointer-events: none;
+        }
+    </style>
+
+<body translate="no">
+    <div class="background">
+        <div class="container">
+            <!-- 太阳光 影藏在图片背后，需要的时候展现-->
+            <svg id="back">
+                <!-- radialGradient 用来定义径向渐变，以对图形元素进行填充或描边。 -->
+                <radialGradient id="SVGID_1_" cx="0" cy="0" r="320.8304" gradientUnits="userSpaceOnUse">
+                    <!-- 一个渐变上的颜色坡度，是用stop元素定义的 -->
+                    <stop offset="0" style="stop-color:#FFDE17;stop-opacity:0.7" />
+                    <stop offset="1" style="stop-color:#FFF200;stop-opacity:0" />
+                </radialGradient>
+                <!-- 图片路径 -->
+                <path id="sunburst" style="fill:url(#SVGID_1_);" d="M0,319.7c-18.6,0-37.3-1.6-55.5-4.8L-7.8,41.4c5.1,0.9,10.6,0.9,15.7,0L56,314.8C37.6,318,18.8,319.7,0,319.7z
+	 M-160.8,276.6c-32.5-18.8-61.3-42.9-85.5-71.6L-34,26.2c3.4,4.1,7.4,7.4,12,10.1L-160.8,276.6z M161.3,276.4L22.1,36.2
+	c4.5-2.6,8.6-6,12-10.1l212.6,178.5C222.5,233.4,193.8,257.6,161.3,276.4z M-302.5,108.3C-315.4,73-321.9,36-322-1.8l277.6-0.5
+	c0,5.3,0.9,10.4,2.7,15.2L-302.5,108.3z M302.6,107.8L41.8,12.8c1.7-4.7,2.6-9.7,2.6-14.9c0-0.3,0-0.6,0-1H322l0-1.3l0,1.9
+	C322,35.4,315.5,72.5,302.6,107.8z M-41.8-17.5l-261-94.5c12.8-35.4,31.6-68,55.8-96.9L-34.1-30.8C-37.5-26.8-40.1-22.3-41.8-17.5z
+	 M41.7-17.7c-1.8-4.8-4.4-9.3-7.8-13.3l212-179.2c24.3,28.8,43.3,61.3,56.3,96.6L41.7-17.7z M-22.2-40.8l-139.6-240
+	c32.7-19,68.1-32,105.2-38.6L-8-46.1C-13-45.2-17.8-43.4-22.2-40.8z M22-40.9c-4.4-2.6-9.2-4.3-14.2-5.1l47.1-273.6
+	c37.2,6.4,72.7,19.2,105.4,38L22-40.9z" />
+            </svg>
+            <!-- <nav> 元素只是作为标注一个导航链接的区域。 -->
+            <nav>
+                <ul>
+                    <!-- 可点击的按钮 -->
+                    <li><a id="button-snow" class="active"><i class="wi wi-snow"></i></a></li>
+                    <li><a id="button-wind"><i class="wi wi-strong-wind"></i></a></li>
+                    <li><a id="button-rain"><i class="wi wi-rain"></i></a></li>
+                    <li><a id="button-thunder"><i class="wi wi-lightning"></i></a></li>
+                    <li><a id="button-sun"><i class="wi wi-day-sunny"></i></a></li>
+                </ul>
+            </nav>
+            <div id="card" class="weather">
+                <svg id="inner">
+                    <!-- 
+                        SVG 允许我们定义以后需要重复使用的图形元素。
+                        建议把所有需要再次使用的引用元素定义在defs元素里面。
+                        这样做可以增加 SVG 内容的易读性和可访问性。 
+                        在defs元素中定义的图形元素不会直接呈现。 
+                        你可以在你的视口的任意地方利用 <use>元素呈现这些元素。
+                     -->
+                     <defs>
+                        <!-- 树叶的svg -->
+                        <path id="leaf"
+                            d="M41.9,56.3l0.1-2.5c0,0,4.6-1.2,5.6-2.2c1-1,3.6-13,12-15.6c9.7-3.1,19.9-2,26.1-2.1c2.7,0-10,23.9-20.5,25 c-7.5,0.8-17.2-5.1-17.2-5.1L41.9,56.3z" />
+                    </defs>
+                    <!-- 太阳的svg -->
+                    <circle id="sun" style="fill: #F7ED47" cx="0" cy="0" r="50" />
+                    <!-- 
+                        <g>标记就是‘group’的简写，是用来分组用的，它能把多个元素放在一组里，
+                        对<g>标记实施的样式和渲染会作用到这个分组内的所有元素上。
+                        组内的所有元素都会继承<g>标记上的所有属性。
+                        用<g>定义的分组还可以使用<use>进行复制使用。
+                     -->
+                    <g id="layer3"></g>
+                    <g id="cloud3" class="cloud"></g>
+                    <g id="layer2"></g>
+                    <g id="cloud2" class="cloud"></g>
+                    <g id="layer1"></g>
+                    <g id="cloud1" class="cloud"></g>
+                </svg>
+                <div class="details">
+                    <!-- 温度 -->
+                    <div class="temp">20<span>c</span></div>
+                    <div class="right">
+                        <!-- 日期 -->
+                        <div id="date">2022/6/14</div>
+                        <!-- 文字 -->
+                        <div id="summary"></div>
+                    </div>
+                </div>
+            </div>
+            <!-- 可废除卡片界面的svg内容 -->
+            <svg id="outer"></svg>
+        </div>
+    </div>
+
+    <script id="rendered-js">
+        var container = $('.container');
+        var card = $('#card');
+        // snap的使用方法
+        /**
+         * var s = Snap("#svg")
+         * var bigCircle = s.circle(150,150,100) 定位，定型，定大小
+         * bigCircle.attr({
+         *      fill:"color", 相当于background
+         *      stroke:"color",  相当于border-color
+         *      strokeWidth:5  相当于border-width
+         * })
+        */
+        var innerSVG = Snap('#inner');
+        var outerSVG = Snap('#outer');
+        var backSVG = Snap('#back');
+        var summary = $('#summary');
+        var date = $('#date');
+        var weatherContainer1 = Snap('#layer1');
+        var weatherContainer2 = Snap('#layer2');
+        var weatherContainer3 = Snap('#layer3');
+        // Paper.group() === Paper.g([varargs]) 一样的
+        // 自动创建一个<g>到自身的元素中作为子元素
+        // 需要三块<g>自行随机掉落雨点
+        var innerRainHolder1 = weatherContainer1.group();
+        var innerRainHolder2 = weatherContainer2.group();
+        var innerRainHolder3 = weatherContainer3.group();
+        var innerLeafHolder = weatherContainer1.group();
+        var innerSnowHolder = weatherContainer1.group();
+        var innerLightningHolder = weatherContainer1.group();
+        // 绘画一个矩形，加入到可超出卡片界面的svg中
+        // 可选 Paper.rect(x, y, width, height, [rx], [ry])
+        var leafMask = outerSVG.rect();
+        // 树叶
+        var leaf = Snap('#leaf');
+        // 太阳
+        var sun = Snap('#sun');
+        // 太阳光
+        var sunburst = Snap('#sunburst');
+        var outerSplashHolder = outerSVG.group();
+        var outerLeafHolder = outerSVG.group();
+        var outerSnowHolder = outerSVG.group();
+        // 卡片明暗亮度计时器
+        var lightningTimeout;
+        // 把刚做的矩形加入到outerLeafHolder中，作为遮罩
+        // 遮罩是用来绘画飘出来的雪，树叶，雨水等
+        outerLeafHolder.attr({
+            'clip-path': leafMask
+        });
+        // 卡片大小
+        var sizes = {
+            container: { width: 0, height: 0 },
+            card: { width: 0, height: 0 }
+        };
+        // 云层的分类
+        var clouds = [
+            { group: Snap('#cloud1') },
+            { group: Snap('#cloud2') },
+            { group: Snap('#cloud3') }];
+        // 设置每一个天气对应的名字
+        var weather = [
+            { type: 'snow', name: '下雪' },
+            { type: 'wind', name: '大风' },
+            { type: 'rain', name: '下雨' },
+            { type: 'thunder', name: '雷阵雨' },
+            { type: 'sun', name: '阳光' }];
+
+        // 添加设置
+        var settings = {
+            // 风的速度
+            windSpeed: 2,
+            // 雨的数量
+            rainCount: 0,
+            // 树叶的数量
+            leafCount: 0,
+            // 雪的数量
+            snowCount: 0,
+            // 云的高度
+            cloudHeight: 100,
+            // 云空间
+            cloudSpace: 30,
+            // 拱型
+            cloudArch: 50,
+            // 飞溅弹跳
+            splashBounce: 80
+        };
+        // 雨的数组
+        var rain = [];
+        // 树叶的数组
+        var leafs = [];
+        // 雪的数组
+        var snow = [];
+        // 初始化
+        init();
+        // 当调整浏览器窗口的大小时，发生 resize 事件。
+        $(window).resize(onResize);
+
+        // 🏃 开始动画
+        // 实现一个无限循环的动画
+        /**
+         * requestAnimationFrame 比起 setTimeout、setInterval的优势主要有两点：
+         * 1、requestAnimationFrame 会把每一帧中的所有DOM操作集中起来，在一次重绘或回流中就完成，并且重绘或回流的时间间隔紧紧跟随浏览器的刷新频率，一般来说，这个频率为每秒60帧。
+         * 2、在隐藏或不可见的元素中，requestAnimationFrame将不会进行重绘或回流，这当然就意味着更少的的cpu，gpu和内存使用量。
+         * 一秒钟60帧
+        */
+        requestAnimationFrame(tick);
+        // 初始化函数
+        function init() {
+            // 设置屏幕宽度和太阳光背景的旋转
+            onResize();
+            // 绑定天气按钮
+            for (var i = 0; i < weather.length; i++) {
+                var w = weather[i];
+                var b = $('#button-' + w.type);
+                w.button = b;
+                // 制造点击事件
+                b.bind('click', w, changeWeather);
+            }
+            // ☁️ 画云
+            for (var i = 0; i < clouds.length; i++) {
+                // 随机云朵的left和top
+                clouds[i].offset = Math.random() * sizes.card.width;
+                drawCloud(clouds[i], i);
+            }
+            // ☀️ 初始化天气（第一个天气）
+            // 因为第一个天气不是晴天，所以没有阳光
+            TweenMax.set(sunburst.node, { opacity: 0 });
+            changeWeather(weather[0]);
+        }
+        // 设置屏幕宽度和太阳光背景的旋转
+        function onResize() {
+            // 赋值成窗口宽度
+            sizes.container.width = container.width();
+            // 赋值成窗口高度
+            sizes.container.height = container.height();
+            // 赋值成卡片宽度
+            sizes.card.width = card.width();
+            // 赋值成卡片高度
+            sizes.card.height = card.height();
+            // 赋值成卡片的top和left
+            sizes.card.offset = card.offset();
+            // 更新inner画布大小
+            innerSVG.attr({
+                width: sizes.card.width,
+                height: sizes.card.height
+            });
+            // 更新outer画布大小,和整个屏幕一样大小
+            outerSVG.attr({
+                width: sizes.container.width,
+                height: sizes.container.height
+            });
+            
+            // 更新back画布大小,和整个屏幕一样大小
+            backSVG.attr({
+                width: sizes.container.width,
+                height: sizes.container.height
+            });
+
+            // 设置阳关背景图的旋转动画效果
+            /**
+             * 这里使用的是gsap中的TwennMax模块
+             * 使用方法：
+             * TweenMax.set(目标元素，设置起点)
+             * TweenMax.fromTo(目标元素，时间，设置动画起点，设置动画终点)
+            */
+            TweenMax.set(sunburst.node, { transformOrigin: "50% 50%", x: sizes.container.width / 2, y: sizes.card.height / 2 + sizes.card.offset.top });
+            // Power0是gsap中的一个动画效果模块，和ease easeIn等差不多
+            TweenMax.fromTo(sunburst.node, 20, { rotation: 0 }, { rotation: 360, repeat: -1, ease: Power0.easeInOut });
+            // 树叶遮罩的大小和方位
+            leafMask.attr({ x: sizes.card.offset.left, y: 0, width: sizes.container.width - sizes.card.offset.left, height: sizes.container.height });
+        }
+        // 制作云
+        function drawCloud(cloud, i) {
+            /* 
+                ☁️我们想创造一个可循环的形状，但也可以
+                里里外外都很生动。所以我们使用Snap SVG来绘制一个形状
+                有4个部分。两端和两个拱的宽度与卡片。
+            */
+
+            var space = settings.cloudSpace * i;
+            var height = space + settings.cloudHeight;
+            var arch = height + settings.cloudArch + Math.random() * settings.cloudArch;
+            var width = sizes.card.width;
+
+            var points = [];
+            points.push('M' + [-width, 0].join(','));
+            points.push([width, 0].join(','));
+            points.push('Q' + [width * 2, height / 2].join(','));
+            points.push([width, height].join(','));
+            points.push('Q' + [width * 0.5, arch].join(','));
+            points.push([0, height].join(','));
+            points.push('Q' + [width * -0.5, arch].join(','));
+            points.push([-width, height].join(','));
+            points.push('Q' + [-(width * 2), height / 2].join(','));
+            points.push([-width, 0].join(','));
+
+            var path = points.join(' ');
+            // 加入云色svg图片
+            if (!cloud.path) cloud.path = cloud.group.path();
+            cloud.path.animate({
+                d: path
+            },
+                0);
+        }
+        // 制作雨
+        function makeRain() {
+            // 💧 如何画雨
+            // 首先我们设置线条的宽度，我们用这个
+            // 来指定它将被添加到哪个svg组
+            // 是否会引起溅起
+            var lineWidth = Math.random() * 3;
+
+            // ⛈ 对于暴风雨天气，线长度变得更长
+            // 三元表达式，a1 == a ? b : c 如果a1 == a是true，那么得出的结果是b，反之是c
+            var lineLength = currentWeather.type == 'thunder' ? 35 : 14;
+
+            // 从顶部的一个随机点开始下落，但是要加 20px margin 
+            var x = Math.random() * (sizes.card.width - 40) + 20;
+
+            // 画线条（卡片内的雨）
+            var line = this['innerRainHolder' + (3 - Math.floor(lineWidth))].path('M0,0 0,' + lineLength).attr({
+                fill: 'none',
+                stroke: currentWeather.type == 'thunder' ? '#777' : '#0000ff',
+                strokeWidth: lineWidth
+            });
+
+            // 将线条添加到一个数组中
+            rain.push(line);
+
+            // 开始下落动画，动画结束时调用onRainEnd
+            TweenMax.fromTo(
+                line.node, // 雨的svg
+                1, // 时间
+                { x: x, y: 0 - lineLength }, // 初始位置
+                { 
+                    delay: Math.random(), // 延迟随机
+                    y: sizes.card.height, // 移动到目标位置
+                    ease: Power2.easeIn, // 以什么速度保持动画
+                    onComplete: onRainEnd, // 完成动画后调用该函数
+                    onCompleteParams: [line, lineWidth, x, currentWeather.type] // 函数里需要的值
+                }
+            );
+        }
+        // 雨结束效果
+        // 线条 线条宽度 雨的x轴位置 雨的种类
+        function onRainEnd(line, width, x, type) {
+            // 首先让我们去掉雨滴 💧
+            line.remove();
+            line = null;
+
+            // 我们也将它从数组中移除
+            for (var i in rain) {
+                if (!rain[i].paper) rain.splice(i, 1);
+            }
+
+            // 如果雨的数量少于我们要求的数量，就要制造雨
+            if (rain.length < settings.rainCount) {
+                makeRain();
+
+                // 💦 如果线条宽度大于2，我们就要制造一个溅飞的效果，这样就看起来雨下的大
+                if (width > 2) makeSplash(x, type);
+            }
+        }
+        // 制作飞溅动画
+        function makeSplash(x, type) {
+            // 💦 我们要把外溅的雨加入到outersvg中.
+            // 设置长度
+            var splashLength = type == 'thunder' ? 30 : 20;
+            // 线条在下落前向上弯曲的最大高度
+            var splashBounce = type == 'thunder' ? 120 : 100;
+            // 这设定了线可以下降多远
+            var splashDistance = 80;
+
+            // 因为暴雨更长，我们希望动画持续的时间稍微长一点，所以两者的整体速度大致相同
+            var speed = type == 'thunder' ? 0.7 : 0.5;
+
+            // 飞溅反弹,值是正的，则一路往下，不会反弹，值是负的，反弹更重
+            var splashUp = 0 - Math.random() * splashBounce;
+
+            // 设置结束x位置，进而定义飞溅方向，飞溅方向是取决于值是正还是负，正往右，负往左
+            var randomX = Math.random() * splashDistance - splashDistance / 2;
+            //设置的三个坐标放入points中，分别是起点，反弹，最后的下落的点. 
+            var points = [];
+            points.push('M' + 0 + ',' + 0);
+            points.push('Q' + randomX + ',' + splashUp);
+            points.push(randomX * 2 + ',' + splashDistance);
+            // 画出svg
+            var splash = outerSplashHolder.path(points.join(' ')).attr({
+                fill: "none",
+                stroke: type == 'thunder' ? '#777' : '#0000ff',
+                strokeWidth: 1
+            });
+            // Snap.path.getTotalLength(path)
+            // 返回给定路径的长度（以像素为单位）
+            var pathLength = Snap.path.getTotalLength(splash);
+            var xOffset = sizes.card.offset.left; //(sizes.container.width - sizes.card.width) / 2
+            var yOffset = sizes.card.offset.top + sizes.card.height;
+            // strokedasharray属性用于创建虚线 
+            // stroke-dasharray = '10, 5' 表示：虚线长10，间距5，然后重复 虚线长10，间距5
+            splash.node.style.strokeDasharray = splashLength + ' ' + pathLength;
+
+            // Start the splash animation, calling onSplashComplete when finished
+            TweenMax.fromTo(
+                splash.node, 
+                speed, 
+                { 
+                    strokeWidth: 2, 
+                    y: yOffset, 
+                    x: xOffset + 20 + x, 
+                    opacity: 1, 
+                    // stroke-dashoffset： offset：偏移的意思。
+                    // 这个属性是相对于起始点的偏移，正数偏移x值的时候，相当于往左移动了x个长度单位，负数偏移x的时候，相当于往右移动了x个长度单位
+                    strokeDashoffset: splashLength 
+                }, { 
+                    strokeWidth: 0, 
+                    strokeDashoffset: -pathLength, 
+                    opacity: 1, 
+                    // 结束动画调用函数
+                    onComplete: onSplashComplete, 
+                    onCompleteParams: [splash], 
+                    ease: SlowMo.ease.config(0.4, 0.1, false) 
+                }
+            );
+        }
+        // 结束飞溅动画
+        function onSplashComplete(splash) {
+            // 💦 飞溅已经完成动画，我们需要移除它
+            splash.remove();
+            splash = null;
+        }
+        // 制作树叶
+        function makeLeaf() {
+            // 随机放大倍数
+            var scale = 0.5 + Math.random() * 0.5;
+            var newLeaf;
+            var areaY = sizes.card.height / 2;
+            // 初始y
+            var y = areaY + Math.random() * areaY;
+            // 结束y
+            var endY = y - (Math.random() * (areaY * 2) - areaY);
+            // 初始x
+            var x;
+            // 结束x
+            var endX;
+            // 随机颜色
+            var colors = ['#76993E', '#4A5E23', '#6D632F'];
+            var color = colors[Math.floor(Math.random() * colors.length)];
+            // 贝塞尔曲线（动画移动曲线）
+            var xBezier;
+
+            if (scale > 0.8) {
+                // 创建新svg
+                newLeaf = leaf.clone().appendTo(outerLeafHolder).
+                    attr({
+                        fill: color
+                    });
+
+                y = y + sizes.card.offset.top / 2;
+                endY = endY + sizes.card.offset.top / 2;
+
+                x = sizes.card.offset.left - 100;
+                xBezier = x + (sizes.container.width - sizes.card.offset.left) / 2;
+                endX = sizes.container.width + 50;
+            } else {
+                newLeaf = leaf.clone().appendTo(innerLeafHolder).
+                    attr({
+                        fill: color
+                    });
+
+                x = -100;
+                xBezier = sizes.card.width / 2;
+                endX = sizes.card.width + 50;
+
+            }
+
+            leafs.push(newLeaf);
+
+            // 曲线动画 三个点
+            var bezier = [{ x: x, y: y }, { x: xBezier, y: Math.random() * endY + endY / 3 }, { x: endX, y: endY }];
+            TweenMax.fromTo(
+                newLeaf.node, 
+                2, 
+                { 
+                    rotation: Math.random() * 180, 
+                    x: x, 
+                    y: y, 
+                    scale: scale 
+                }, { 
+                    rotation: Math.random() * 360, 
+                    bezier: bezier, 
+                    onComplete: onLeafEnd, 
+                    onCompleteParams: [newLeaf], 
+                    ease: Power0.easeIn 
+                }
+            );
+        }
+        // 移除树叶
+        function onLeafEnd(leaf) {
+            leaf.remove();
+            leaf = null;
+
+            for (var i in leafs) {
+                if (!leafs[i].paper) leafs.splice(i, 1);
+            }
+            // 当树叶没有的时候，创建新树叶
+            if (leafs.length < settings.leafCount) {
+                makeLeaf();
+            }
+        }
+        // 制作雪
+        function makeSnow() {
+            // 随机放大倍数 
+            var scale = 0.5 + Math.random() * 0.5;
+            var newSnow;
+            // 初始x
+            var x = 20 + Math.random() * (sizes.card.width - 40);
+            // 结束x
+            var endX; // = x - ((Math.random() * (areaX * 2)) - areaX)
+            // 初始y
+            var y = -10;
+            // 结束y
+            var endY;
+
+            if (scale > 0.8) {
+                newSnow = outerSnowHolder.circle(0, 0, 5).
+                    attr({
+                        fill: 'white'
+                    });
+
+                endY = sizes.container.height + 10;
+                y = sizes.card.offset.top + settings.cloudHeight;
+                x = x + sizes.card.offset.left;
+                //xBezier = x + (sizes.container.width - sizes.card.offset.left) / 2;
+                //endX = sizes.container.width + 50;
+            } else {
+                newSnow = innerSnowHolder.circle(0, 0, 5).
+                    attr({
+                        fill: 'white'
+                    });
+
+                endY = sizes.card.height + 10;
+                //x = -100;
+                //xBezier = sizes.card.width / 2;
+                //endX = sizes.card.width + 50;
+            }
+            snow.push(newSnow);
+
+
+            TweenMax.fromTo(
+                newSnow.node, 
+                3 + Math.random() * 5, // 时间
+                { x: x, y: y }, 
+                { 
+                    y: endY, 
+                    onComplete: onSnowEnd, 
+                    onCompleteParams: [newSnow], 
+                    ease: Power0.easeIn 
+                });
+            TweenMax.fromTo(
+                newSnow.node, 
+                1, 
+                { scale: 0 }, 
+                { scale: scale, ease: Power1.easeInOut }
+            );
+            TweenMax.to(
+                newSnow.node, 
+                3, 
+                { 
+                    x: x + (Math.random() * 150 - 75), 
+                    repeat: -1, // 无限循环
+                    yoyo: true, // 获取或设置时间轴的yoyo状态，如果为true，则时间轴会前后移动，每次重复时会前后交替。
+                    ease: Power1.easeInOut 
+                });
+        }
+        // 移除雪
+        function onSnowEnd(flake) {
+            flake.remove();
+            flake = null;
+
+            for (var i in snow) {
+                if (!snow[i].paper) snow.splice(i, 1);
+            }
+
+            if (snow.length < settings.snowCount) {
+                makeSnow();
+            }
+        }
+        // 开始动画
+        function tick() {
+            // 制造雨，树叶，雪
+            if (rain.length < settings.rainCount) makeRain();
+            if (leafs.length < settings.leafCount) makeLeaf();
+            if (snow.length < settings.snowCount) makeSnow();
+            // 判断云的位置
+            for (var i = 0; i < clouds.length; i++) {
+                // 如果是晴天的话，就消失
+                if (currentWeather.type == 'sun') {
+                    if (clouds[i].offset > -(sizes.card.width * 1.5)) clouds[i].offset += settings.windSpeed / (i + 1);
+                    if (clouds[i].offset > sizes.card.width * 2.5) clouds[i].offset = -(sizes.card.width * 1.5);
+                    clouds[i].group.transform('t' + clouds[i].offset + ',' + 0);
+                } else {
+                    // 其他天气都保持动画
+                    clouds[i].offset += settings.windSpeed / (i + 1);
+                    if (clouds[i].offset > sizes.card.width) clouds[i].offset = 0 + (clouds[i].offset - sizes.card.width);
+                    clouds[i].group.transform('t' + clouds[i].offset + ',' + 0);
+                }
+            }
+            // 保持动画
+            requestAnimationFrame(tick);
+        }
+        // 重置按钮active和天气绑定
+        function reset() {
+            for (var i = 0; i < weather.length; i++) {
+                container.removeClass(weather[i].type);
+                weather[i].button.removeClass('active');
+            }
+        }
+        // 更新文字
+        function updateSummaryText() {
+            summary.html(currentWeather.name);
+            TweenMax.fromTo(summary, 1.5, { x: 30 }, { opacity: 1, x: 0, ease: Power4.easeOut });
+        }
+        // 明暗计时器
+        function startLightningTimer() {
+            // 其他天气，关闭计时器
+            if (lightningTimeout) clearTimeout(lightningTimeout);
+            // 如果是雷雨天，开始计时器
+            if (currentWeather.type == 'thunder') {
+                // 调用明暗函数
+                lightningTimeout = setTimeout(lightning, Math.random() * 6000);
+            }
+        }
+        // 卡片明暗亮度变化
+        function lightning() {
+            // 重复启用，循环闪电特效和抖动画面
+            startLightningTimer()
+            // 卡片变暗
+            TweenMax.fromTo(card, 0.75, { y: -30 }, { y: 0, ease: Elastic.easeOut });
+            // 卡片抖动，雷阵雨天
+            var pathX = 30 + Math.random() * (sizes.card.width - 60);
+            var yOffset = 20;
+            // 闪电的20个波段
+            var steps = 20;
+            var points = [pathX + ',0'];
+            // 每一个波段都要有一点倾斜度
+            for (var i = 0; i < steps; i++) {
+                var x = pathX + (Math.random() * yOffset - yOffset / 2);
+                var y = sizes.card.height / steps * (i + 1);
+                points.push(x + ',' + y);
+            }
+            // 闪电
+            var strike = weatherContainer1.path('M' + points.join(' ')).
+                attr({
+                    fill: 'none',
+                    stroke: 'white',
+                    strokeWidth: 2 + Math.random()
+                });
+            TweenMax.to(
+                strike.node, 
+                1, 
+                { 
+                    opacity: 0, 
+                    ease: Power4.easeOut, 
+                    onComplete: function () {
+                        // 移除闪电 
+                        strike.remove(); 
+                        strike = null; 
+                    } 
+                });
+        }
+        // 改变天气情况
+        function changeWeather(weather) {
+            if (weather.data) weather = weather.data;
+            // 重置按钮内容
+            reset();
+            // 赋值当前天气
+            currentWeather = weather;
+            // 取消特定对象的所有补间(或特定补间属性)或对特定函数的延迟调用。例如，如果您想要杀死myObject的所有补间动画
+            TweenMax.killTweensOf(summary);
+            // 每次更改天气的时候，对应的文字也要切换
+            TweenMax.to(
+                summary, // 天气文字
+                1, 
+                { 
+                    opacity: 0, 
+                    x: -30, 
+                    onComplete: updateSummaryText, // 切换文字函数
+                    ease: Power4.easeIn 
+                });
+            // 加入对应的天气种类
+            container.addClass(weather.type);
+            // 激活按钮的active
+            weather.button.addClass('active');
+            // 风速变化
+            switch (weather.type) {
+                case 'wind':
+                    TweenMax.to(settings, 3, { windSpeed: 3, ease: Power2.easeInOut });
+                    break;
+                case 'sun':
+                    TweenMax.to(settings, 3, { windSpeed: 20, ease: Power2.easeInOut });
+                    break;
+                default:
+                    TweenMax.to(settings, 3, { windSpeed: 0.5, ease: Power2.easeOut });
+                    break;
+            }
+            // 下雨数量
+            switch (weather.type) {
+                case 'rain':
+                    TweenMax.to(settings, 3, { rainCount: 10, ease: Power2.easeInOut });
+                    break;
+                case 'thunder':
+                    TweenMax.to(settings, 3, { rainCount: 60, ease: Power2.easeInOut });
+                    break;
+                default:
+                    TweenMax.to(settings, 1, { rainCount: 0, ease: Power2.easeOut });
+                    break;
+            }
+            // 树叶数量
+            switch (weather.type) {
+                case 'wind':
+                    TweenMax.to(settings, 3, { leafCount: 5, ease: Power2.easeInOut });
+                    break;
+                default:
+                    TweenMax.to(settings, 1, { leafCount: 0, ease: Power2.easeOut });
+                    break;
+            }
+            // 下雪数量
+            switch (weather.type) {
+                case 'snow':
+                    TweenMax.to(settings, 3, { snowCount: 40, ease: Power2.easeInOut });
+                    break;
+                default:
+                    TweenMax.to(settings, 1, { snowCount: 0, ease: Power2.easeOut });
+                    break;
+            }
+            // 太阳位置
+            switch (weather.type) {
+                case 'sun':
+                    TweenMax.to(sun.node, 4, { x: sizes.card.width / 2, y: sizes.card.height / 2, ease: Power2.easeInOut });
+                    TweenMax.to(sunburst.node, 4, { scale: 1, opacity: 0.8, y: sizes.card.height / 2 + sizes.card.offset.top, ease: Power2.easeInOut });
+                    break;
+                default:
+                    TweenMax.to(sun.node, 2, { x: sizes.card.width / 2, y: -100, leafCount: 0, ease: Power2.easeInOut });
+                    TweenMax.to(sunburst.node, 2, { scale: 0.4, opacity: 0, y: sizes.container.height / 2 - 50, ease: Power2.easeInOut });
+                    break;
+            }
+            startLightningTimer();
+        }
+    </script>
+</body>
+
+</html>
